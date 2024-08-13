@@ -66,7 +66,6 @@ app.post('/renameFolder', (req, res) => {
         return res.status(400).send('Invalid folder path');
     }
 
-
     fs.rename(oldFullPath, newFullPath, (err) => {
         if (err) {
             return res.status(500).send('Failed to rename folder');
@@ -81,7 +80,25 @@ app.post('/renameFolder', (req, res) => {
 
 // POST endpoint to rename file 
 app.post('/renameFile', (req, res) => {
+    const { path: currentPath, name: newName } = req.body;
+    const oldFullPath = path.join(__dirname, currentPath);
+    const newFullPath = path.join(__dirname, path.dirname(currentPath), newName);
 
+    if (!currentPath || !newName) {
+        return res.status(400).send('Both current path and new name are required');
+    }
+
+
+    if (!oldFullPath.startsWith(path.join(__dirname, 'public'))) {
+        return res.status(400).send('Invalid folder path');
+    }
+
+    fs.rename(oldFullPath, newFullPath, (err) => {
+        if (err) {
+            return res.status(500).send('Failed to rename folder');
+        }
+        res.send('Folder renamed successfully');
+    });
 });
 
 
@@ -97,7 +114,32 @@ app.post('/uploadFile', async (req, res) => {
 
 // Delete endpoint to delete file and folder
 app.delete('/deleteItem', async (req, res) => {
+    const itemPath = req.body.path;
+    if (!itemPath) {
+        return res.status(400).send('Path is required');
+    }
 
+    const absolutePath = path.join(__dirname, itemPath);
+    if (!absolutePath.startsWith(path.join(__dirname, 'public'))) {
+        return res.status(400).send('Invalid path');
+    }
+
+    try {
+        if (stats.isDirectory()) {
+            fs.rmdir(absolutePath, { recursive: true }, (err) => { });
+            res.send('Folder deleted successfully');
+        } else {
+            fs.unlink(absolutePath, (err) => {
+                if (err) {
+                    console.log(err)
+                    res.send("error")
+                }
+            })
+            res.send('File deleted successfully');
+        }
+    } catch (err) {
+        console.error(err);
+    }
 
 });
 
