@@ -90,15 +90,19 @@ app.post('/renameFile', (req, res) => {
 
 
     if (!oldFullPath.startsWith(path.join(__dirname, 'public'))) {
-        return res.status(400).send('Invalid folder path');
+        return res.status(400).send('Invalid file path');
     }
 
-    fs.rename(oldFullPath, newFullPath, (err) => {
-        if (err) {
-            return res.status(500).send('Failed to rename folder');
+    try {
+        if (fs.existsSync(oldFullPath)) {
+            fs.renameSync(oldFullPath, newFullPath);
+            res.send('File renamed');
+        } else {
+            res.status(404).send('File not found');
         }
-        res.send('Folder renamed successfully');
-    });
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
 });
 
 
@@ -125,6 +129,7 @@ app.delete('/deleteItem', async (req, res) => {
     }
 
     try {
+        const stats = fs.statSync(absolutePath);
         if (stats.isDirectory()) {
             fs.rmdir(absolutePath, { recursive: true }, (err) => { });
             res.send('Folder deleted successfully');
