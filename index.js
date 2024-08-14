@@ -111,7 +111,39 @@ app.post('/renameFile', (req, res) => {
 
 // POST endpoint to upload files
 app.post('/uploadFile', async (req, res) => {
+    const filePath = req.body.path;
+    const fileName = req.body.name;
+    const fileData = req.body.data;
 
+    if (!filePath || !fileName || !fileData) {
+        return res.status(400).send('Path, name, and data are required');
+    }
+
+    const absolutePath = path.join(__dirname, filePath);
+    if (!absolutePath.startsWith(path.join(__dirname, 'public'))) {
+        return res.status(400).send('Invalid file path');
+    }
+
+    const fileAbsolutePath = path.join(absolutePath, fileName);
+
+    try {
+    
+        if (!fs.existsSync(absolutePath)) {
+            fs.mkdirSync(absolutePath, { recursive: true });
+        }
+
+
+        fs.writeFile(fileAbsolutePath, fileData, (err) => {
+            if (err) {
+                console.error('Error writing file:', err);
+                return res.status(500).send('Failed to upload file');
+            }
+            res.send('File uploaded successfully');
+        });
+    } catch (err) {
+        console.error('Error uploading file:', err);
+        res.status(500).send('Failed to upload file');
+    }
 });
 
 
